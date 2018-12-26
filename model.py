@@ -77,12 +77,10 @@ model.add(Dropout(0.2))
 print(model.output_shape)
 
 model.add(Conv2D(64, (3, 3), activation='relu'))
-model.add(MaxPooling2D((2, 2)))
 model.add(Dropout(0.1))
 print(model.output_shape)
 
 model.add(Conv2D(64, (3, 3), activation='relu'))
-model.add(MaxPooling2D((2, 2)))
 model.add(Dropout(0.1))
 print(model.output_shape)
 
@@ -90,9 +88,9 @@ print(model.output_shape)
 model.add(Flatten())
 
 # Step 5 : Add fully-connected layers with rely activation function
-model.add(Dense(100), activation='relu')
-model.add(Dense(50), activation='relu')
-model.add(Dense(10), activation='relu')
+model.add(Dense(100, activation='relu'))
+model.add(Dense(50, activation='relu'))
+model.add(Dense(10, activation='relu'))
 model.add(Dense(1))
 
 model.compile(loss='mse', optimizer='adam')
