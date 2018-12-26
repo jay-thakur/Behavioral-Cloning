@@ -1,20 +1,31 @@
 import os
 import csv
+import cv2
+import numpy as np
+
+import sklearn
+from sklearn.utils import shuffle
+from sklearn.model_selection import train_test_split
+
+from keras.models import Sequential, Model
+from keras.layers import Lambda
+from keras.layers import Cropping2D
+from keras.layers.convolutional import Conv2D,Convolution2D
+from keras.layers.pooling import MaxPooling2D
+from keras.layers.core import Dense, Activation, Flatten, Dropout
 
 samples = []
-with open('./driving_log.csv') as csvfile:
+with open('./data/driving_log.csv') as csvfile:
     reader = csv.reader(csvfile)
     for line in reader:
         samples.append(line)
 
-from sklearn.model_selection import train_test_split
 train_samples, validation_samples = train_test_split(samples, test_size=0.2)
 
-import cv2
-import numpy as np
-import sklearn
+batch_size = 32
+epochs = 10
 
-def generator(samples, batch_size=32):
+def generator(samples, batch_size):
     num_samples = len(samples)
     while 1: # Loop forever so the generator never terminates
         shuffle(samples)
@@ -24,7 +35,7 @@ def generator(samples, batch_size=32):
             images = []
             angles = []
             for batch_sample in batch_samples:
-                name = './IMG/'+batch_sample[0].split('/')[-1]
+                name = './data/IMG/'+batch_sample[0].split('/')[-1]
                 center_image = cv2.imread(name)
                 center_angle = float(batch_sample[3])
                 images.append(center_image)
@@ -36,25 +47,38 @@ def generator(samples, batch_size=32):
             yield sklearn.utils.shuffle(X_train, y_train)
 
 # compile and train the model using the generator function
-train_generator = generator(train_samples, batch_size=32)
-validation_generator = generator(validation_samples, batch_size=32)
+train_generator = generator(train_samples, batch_size)
+validation_generator = generator(validation_samples, batch_size)
 
-ch, row, col = 3, 80, 320  # Trimmed image format
-
+# Create the Sequential model
 model = Sequential()
 # Preprocess incoming data, centered around zero with small standard deviation 
-model.add(Lambda(lambda x: x/127.5 - 1.,
-        input_shape=(ch, row, col),
-        output_shape=(ch, row, col)))
-model.add(... finish defining the rest of your model architecture here ...)
+model.add(Lambda(lambda x: (x / 255.0) - 0.5, input_shape = (160,320,3)))
+# Set up cropping2D layer
+model.add(Cropping2D(cropping=((50,20), (0,0)), input_shape=(3,160,320)))
+# Add a Convolutional Layer 
+model.add(Conv2D(32, (3, 3)))
+# Add a max poolong layer
+model.add(MaxPooling2D((2, 2)))
+# Add a dropout layer
+model.add(Dropout(0.5))
+# Add a ReLU activation layer
+model.add(Activation('relu'))
+# Add a flatten layer
+model.add(Flatten())
+# Add a fully connected layer
+model.add(Dense(128))
+# Add a ReLU activation layer
+model.add(Activation('relu'))
+# Add a fully connected layer
+model.add(Dense(5))
+# Add a ReLU activation layer
+model.add(Activation('relu'))
 
 model.compile(loss='mse', optimizer='adam')
-model.fit_generator(train_generator, samples_per_epoch= /
-            len(train_samples), validation_data=validation_generator, /
-            nb_val_samples=len(validation_samples), nb_epoch=3)
+# model.fit_generator(train_generator,samples_per_epoch=len(train_samples),validation_data=validation_generator,nb_val_samples=len(validation_samples), nb_epoch=epochs)
 
-"""
-If the above code throw exceptions, try 
 model.fit_generator(train_generator, steps_per_epoch= len(train_samples),
-validation_data=validation_generator, validation_steps=len(validation_samples), epochs=5, verbose = 1)
-"""
+validation_data=validation_generator, validation_steps=len(validation_samples), epochs=epochs, verbose = 1)
+
+model.save('model.h5')
