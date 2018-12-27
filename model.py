@@ -63,34 +63,34 @@ model = Sequential()
 
 # Step 1 : Preprocess incoming data, centered around zero with small standard deviation 
 model.add(Lambda(lambda x: (x / 255.0) - 0.5, input_shape = (160,320,3)))
-print(model.output_shape)
 
-# Step 2 : Set up cropping2D layer
+# Step 2 : Set up Cropping2D layer
 model.add(Cropping2D(cropping=((50,20), (0,0))))
-print(model.output_shape)
+
 # Step 3 : Add 5 Convolutional Layer with max pooling layer & dropout layer
 model.add(Conv2D(24, (5, 5), activation='relu'))
 model.add(MaxPooling2D((2, 2)))
 model.add(Dropout(0.2))
-print(model.output_shape)
+
 model.add(Conv2D(36, (5, 5), activation='relu'))
 model.add(MaxPooling2D((2, 2)))
 model.add(Dropout(0.2))
-print(model.output_shape)
+
 model.add(Conv2D(48, (5, 5), activation='relu'))
 model.add(MaxPooling2D((2, 2)))
-model.add(Dropout(0.2))
-print(model.output_shape)
+model.add(Dropout(0.1))
+
 model.add(Conv2D(64, (3, 3), activation='relu'))
 model.add(Dropout(0.1))
-print(model.output_shape)
+
 model.add(Conv2D(64, (3, 3), activation='relu'))
 model.add(Dropout(0.1))
-print(model.output_shape)
+
+
 # Step 4 : Add a flatten layer
 model.add(Flatten())
 
-# Step 5 : Add fully-connected layers with rely activation function
+# Step 5 : Add fully-connected layers with relu activation function
 model.add(Dense(100, activation='relu'))
 model.add(Dense(50, activation='relu'))
 model.add(Dense(10, activation='relu'))
@@ -98,8 +98,6 @@ model.add(Dense(1))
 
 model.compile(loss='mse', optimizer='adam')
 # model.fit_generator(train_generator,samples_per_epoch=len(train_samples),validation_data=validation_generator,nb_val_samples=len(validation_samples), nb_epoch=epochs)
-# model.fit_generator(train_generator, steps_per_epoch=len(train_samples),
-# validation_data=validation_generator, validation_steps=len(validation_samples), epochs=epochs, verbose=1)
 
 model.fit_generator(train_generator, samples_per_epoch=int(len(train_samples)/batch_size), validation_data=validation_generator,         nb_val_samples=int(len(validation_samples)/batch_size), nb_epoch=epochs)
 
