@@ -17,14 +17,15 @@ from keras.layers.core import Dense, Activation, Flatten, Dropout
 samples = []
 with open('./data/driving_log.csv') as csvfile:
     reader = csv.reader(csvfile)
-    next(reader) 
+    next(reader) # Skip header
     for line in reader:
         samples.append(line)
 
 train_samples, validation_samples = train_test_split(samples, test_size=0.2)
 
 batch_size = 32
-epochs = 6
+epochs = 5
+sterring_correction = [0.0, 0.2, -0.2] # center, left and right
 
 def generator(samples, batch_size):
     num_samples = len(samples)
@@ -37,11 +38,16 @@ def generator(samples, batch_size):
             images = []
             angles = []
             for batch_sample in batch_samples:
-                name = './data/IMG/'+batch_sample[0].split('/')[-1]                
-                center_image = cv2.imread(name)
-                center_angle = float(batch_sample[3])                
-                images.append(center_image)
-                angles.append(center_angle)
+                for i in range(3):
+                    name = './data/IMG/'+batch_sample[0].split('/')[-1]                
+                    center_image = cv2.imread(name)
+                    center_angle = float(batch_sample[3]) + sterring_correction[i]               
+                    images.append(center_image)
+                    angles.append(center_angle)
+
+                    # Add Flipped Image
+                    images.append(cv2.flip(center_image, 1))
+                    angles.append(center_angle * -1.0)
 
             # trim image to only see section with road
             X_train = np.array(images)
@@ -57,29 +63,30 @@ model = Sequential()
 
 # Step 1 : Preprocess incoming data, centered around zero with small standard deviation 
 model.add(Lambda(lambda x: (x / 255.0) - 0.5, input_shape = (160,320,3)))
+print(model.output_shape)
 
 # Step 2 : Set up cropping2D layer
 model.add(Cropping2D(cropping=((50,20), (0,0))))
-
+print(model.output_shape)
 # Step 3 : Add 5 Convolutional Layer with max pooling layer & dropout layer
 model.add(Conv2D(24, (5, 5), activation='relu'))
 model.add(MaxPooling2D((2, 2)))
 model.add(Dropout(0.2))
-
+print(model.output_shape)
 model.add(Conv2D(36, (5, 5), activation='relu'))
 model.add(MaxPooling2D((2, 2)))
 model.add(Dropout(0.2))
-
+print(model.output_shape)
 model.add(Conv2D(48, (5, 5), activation='relu'))
 model.add(MaxPooling2D((2, 2)))
 model.add(Dropout(0.2))
-
+print(model.output_shape)
 model.add(Conv2D(64, (3, 3), activation='relu'))
 model.add(Dropout(0.1))
-
+print(model.output_shape)
 model.add(Conv2D(64, (3, 3), activation='relu'))
 model.add(Dropout(0.1))
-
+print(model.output_shape)
 # Step 4 : Add a flatten layer
 model.add(Flatten())
 
